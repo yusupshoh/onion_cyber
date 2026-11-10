@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kirish yoki ro'yxatdan o'tish</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#111C39;
+    --navy-2:#1B2C52;
+    --blue:#2F5FE0;
+    --blue-dark:#2247B8;
+    --blue-light:#EAF0FE;
+    --ink:#101828;
+    --slate:#5B6478;
+    --bg:#F7F8FB;
+    --line:#E4E7EE;
+    --teal:#0EA5A0;
+    --teal-light:#E3F6F5;
+    --violet:#6E5E9C;
+    --red:#E15554;
+    --white:#FFFFFF;
+  }
+
+  *{margin:0; padding:0; box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg);
+    font-family:'Inter', sans-serif;
+    color:var(--ink);
+    padding:32px 20px;
+    position:relative;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2{font-family:'Plus Jakarta Sans', sans-serif; letter-spacing:-0.02em;}
+  a{color:inherit;}
+  button{font-family:inherit; cursor:pointer;}
+  input{font-family:inherit;}
+
+  /* ================= FONDAGI YENGIL HARAKAT ================= */
+  .bg-blob{
+    position:fixed; border-radius:50%; filter:blur(90px);
+    z-index:0; pointer-events:none;
+    animation:drift 16s ease-in-out infinite;
+  }
+  .blob-1{width:420px; height:420px; background:var(--blue-light); top:-140px; left:-120px; opacity:.9;}
+  .blob-2{width:380px; height:380px; background:var(--teal-light); bottom:-160px; right:-110px; animation-delay:-8s;}
+  @keyframes drift{
+    0%,100%{transform:translate(0,0) scale(1);}
+    50%{transform:translate(26px,-18px) scale(1.06);}
+  }
+
+  /* ================= ASOSIY IDISH ================= */
+  .auth-shell{
+    position:relative; z-index:1;
+    width:100%; max-width:960px; min-height:600px;
+    background:var(--white);
+    border-radius:24px;
+    box-shadow:0 40px 90px -28px rgba(17,28,57,0.28);
+    overflow:hidden;
+    opacity:0; transform:translateY(14px);
+    animation:shellIn .6s ease forwards .1s;
+  }
+  @keyframes shellIn{to{opacity:1; transform:translateY(0);}}
+
+  /* ================= OVERLAY (matn/tugma paneli) ================= */
+  .overlay-container{
+    position:absolute; top:0; left:0; width:50%; height:100%;
+    overflow:hidden; z-index:20;
+    transition:transform .75s cubic-bezier(.65,0,.35,1);
+  }
+  .auth-shell.active .overlay-container{transform:translateX(100%);}
+
+  .overlay{
+    display:flex; width:200%; height:100%;
+    background:linear-gradient(150deg, var(--navy) 0%, var(--navy-2) 55%, var(--blue-dark) 140%);
+    color:#fff;
+    transition:transform .75s cubic-bezier(.65,0,.35,1);
+    position:relative;
+  }
+  .auth-shell.active .overlay{transform:translateX(-50%);}
+  .overlay::before{
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.07), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(255,255,255,0.06), transparent 45%);
+    pointer-events:none;
+  }
+
+  .overlay-panel{
+    width:50%; flex-shrink:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:0 46px; text-align:center; position:relative;
+  }
+  .overlay-icon{
+    width:64px; height:64px; border-radius:18px;
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.16);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:26px;
+  }
+  .overlay-icon svg{width:28px; height:28px;}
+  .overlay-panel h2{font-size:24px; font-weight:700; line-height:1.3;}
+  .overlay-panel p{margin-top:14px; font-size:14px; line-height:1.65; color:rgba(255,255,255,0.7); max-width:30ch;}
+
+  .btn-outline{
+    margin-top:30px;
+    padding:13px 32px;
+    border:1.5px solid rgba(255,255,255,0.55);
+    border-radius:10px;
+    background:transparent; color:#fff;
+    font-size:14px; font-weight:700;
+    transition:background .2s ease, transform .2s ease, border-color .2s ease;
+  }
+  .btn-outline:hover{background:rgba(255,255,255,0.12); border-color:#fff; transform:translateY(-2px);}
+
+  /* ================= FORMALAR ================= */
+  .forms-container{
+    position:absolute; top:0; left:50%; width:50%; height:100%;
+    overflow:hidden;
+    transition:transform .75s cubic-bezier(.65,0,.35,1);
+  }
+  .auth-shell.active .forms-container{transform:translateX(-100%);}
+
+  .forms-track{
+    display:flex; width:200%; height:100%;
+    transition:transform .75s cubic-bezier(.65,0,.35,1);
+  }
+  .auth-shell.active .forms-track{transform:translateX(-50%);}
+
+  .form-slide{
+    width:50%; flex-shrink:0; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:44px 52px;
+    overflow-y:auto;
+  }
+
+  .auth-form{width:100%; max-width:340px;}
+
+  .brand{display:flex; align-items:center; gap:9px; margin-bottom:34px;}
+  .brand-mark{width:30px; height:30px; border-radius:8px; background:var(--blue); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .brand-mark svg{width:16px; height:16px;}
+  .brand span{font-family:'Plus Jakarta Sans', sans-serif; font-weight:800; font-size:18px; color:var(--ink);}
+
+  .auth-form h1{font-size:25px; font-weight:700; color:var(--ink);}
+  .auth-form > p.sub{margin-top:8px; font-size:13.5px; color:var(--slate); margin-bottom:26px;}
+
+  .placeholder-box{
+    border:1.5px dashed var(--line); border-radius:12px;
+    padding:40px 20px; margin-top:6px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    color:var(--slate); font-size:13px; text-align:center;
+  }
+  .placeholder-box svg{width:22px; height:22px; color:var(--line);}
+
+  .field{margin-bottom:15px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink); margin-bottom:6px;}
+  .field input{
+    width:100%; border:1px solid var(--line); border-radius:9px;
+    padding:11px 13px; font-size:13.5px; color:var(--ink);
+    background:#fff; transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .field input:focus{outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(47,95,224,0.12);}
+  .field input::placeholder{color:#B4BBCB;}
+
+  .password-wrap{position:relative;}
+  .password-wrap input{padding-right:42px;}
+  .eye-btn{
+    position:absolute; right:6px; top:50%; transform:translateY(-50%);
+    width:30px; height:30px; border-radius:7px; border:none; background:none;
+    display:flex; align-items:center; justify-content:center; color:var(--slate);
+    transition:background .15s ease, color .15s ease;
+  }
+  .eye-btn:hover{background:var(--bg); color:var(--ink);}
+  .eye-btn svg{width:16px; height:16px;}
+  .eye-btn .eye-off{display:none;}
+  .eye-btn.showing .eye{display:none;}
+  .eye-btn.showing .eye-off{display:block;}
+
+  .form-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; font-size:12.5px;}
+  .checkbox-row{display:flex; align-items:center; gap:7px; color:var(--slate);}
+  .checkbox-row input{width:15px; height:15px; accent-color:var(--blue);}
+  .link-sm{color:var(--blue); font-weight:600; text-decoration:none;}
+  .link-sm:hover{text-decoration:underline;}
+
+  .btn-primary-lg{
+    width:100%; padding:13px; border-radius:10px; border:none;
+    background:var(--blue); color:#fff; font-size:14.5px; font-weight:700;
+    margin-top:4px; transition:background .2s ease, transform .2s ease, box-shadow .2s ease;
+  }
+  .btn-primary-lg:hover{background:var(--blue-dark); transform:translateY(-2px); box-shadow:0 12px 26px -10px rgba(47,95,224,0.5);}
+  .btn-primary-lg:active{transform:translateY(0);}
+
+  .mobile-switch{display:none; text-align:center; margin-top:22px; font-size:13px; color:var(--slate);}
+  .mobile-switch button{background:none; border:none; color:var(--blue); font-weight:700; font-size:13px; padding:0;}
+
+  /* ================= RESPONSIV (MOBIL) ================= */
+  @media (max-width:860px){
+    .overlay-container{display:none;}
+    .forms-container{position:static; width:100%; height:auto;}
+    .forms-track{width:100%; transform:none !important;}
+    .form-slide{width:100%; padding:40px 26px;}
+    .form-login-slide{display:flex;}
+    .form-register-slide{display:none;}
+    .auth-shell.active .form-login-slide{display:none;}
+    .auth-shell.active .form-register-slide{display:flex;}
+    .mobile-switch{display:block;}
+    .auth-shell{min-height:0;}
+  }
+  @media (max-width:420px){
+    .form-slide{padding:34px 20px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+
+  .form-msg{margin:4px 0 12px;padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.4}
+  .form-msg.error{background:#fdecec;color:#a12622;border:1px solid #f3c1bf}
+  .form-msg.ok{background:#e8f6ec;color:#1d6b3a;border:1px solid #b9e2c6}
+  .btn-primary-lg[disabled]{opacity:.65;cursor:progress}
+</style>
+</head>
+<body>
+
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
+
+<div class="auth-shell" id="authShell">
+
+  <!-- ============ FORMALAR ============ -->
+  <div class="forms-container">
+    <div class="forms-track">
+
+      <!-- KIRISH -->
+      <div class="form-slide form-login-slide">
+        <form class="auth-form" id="loginForm" novalidate>
+          <div class="brand">
+            <span class="brand-mark">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h16M4 6h16M4 18h10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+            <span>Muallim</span>
+          </div>
+
+          <h1>Xush kelibsiz!</h1>
+          <p class="sub">Hisobingizga kiring va ishingizni davom ettiring.</p>
+
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="loginEmail" name="email" autocomplete="username" maxlength="320" placeholder="siz@masalan.uz" required>
+          </div>
+
+          <div class="field">
+            <label>Parol</label>
+            <div class="password-wrap">
+              <input type="password" id="loginPass" name="password" autocomplete="current-password" maxlength="256" placeholder="••••••••" required>
+              <button type="button" class="eye-btn" onclick="togglePass('loginPass', this)">
+                <svg class="eye" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
+                <svg class="eye-off" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M10.6 10.6a3 3 0 004.24 4.24M9.4 5.5A11 11 0 0112 5c7 0 11 7 11 7a13.5 13.5 0 01-3.1 3.8M6.1 6.6C3.4 8.4 1 12 1 12s2.2 3.9 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="checkbox-row"><input type="checkbox">Meni eslab qol</label>
+            <a href="#" class="link-sm">Parolni unutdingizmi?</a>
+          </div>
+
+          <div class="form-msg" id="loginMsg" role="alert" aria-live="polite" hidden></div>
+          <button type="submit" class="btn-primary-lg" id="loginBtn">Kirish</button>
+
+          <div class="mobile-switch">Hisobingiz yo'qmi? <button type="button" onclick="goRegister()">Ro'yxatdan o'tish</button></div>
+        </form>
+      </div>
+
+      <!-- RO'YXATDAN O'TISH — mazmuni keyinroq qo'shiladi -->
+      <div class="form-slide form-register-slide">
+        <div class="auth-form">
+          <div class="brand">
+            <span class="brand-mark">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h16M4 6h16M4 18h10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+            <span>Muallim</span>
+          </div>
+
+          <h1>Ro'yxatdan o'tish</h1>
+          <p class="sub">Hisoblar administrator tomonidan yaratiladi. Kirish ma'lumotlarini olish uchun maktab ma'muriyatiga murojaat qiling.</p>
+
+          <div class="placeholder-box">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <span>Forma shu yerga qo'shiladi</span>
+          </div>
+
+          <div class="mobile-switch">Hisobingiz bormi? <button type="button" onclick="goLogin()">Kirish</button></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ OVERLAY (matn + almashtirish tugmasi) ============ -->
+  <div class="overlay-container">
+    <div class="overlay">
+
+      <div class="overlay-panel">
+        <div class="overlay-icon">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="#fff" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <h2>Kuningizni tartibga soling</h2>
+        <p>Darslar, davomat, topshiriqlar va hisobotlarni bitta joyda boshqaring.</p>
+        <button type="button" class="btn-outline" onclick="goRegister()">Ro'yxatdan o'tish</button>
+      </div>
+
+      <div class="overlay-panel">
+        <div class="overlay-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2>Hisobingiz allaqachon bormi?</h2>
+        <p>Kiring va qoldirgan joyingizdan ishni davom ettiring.</p>
+        <button type="button" class="btn-outline" onclick="goLogin()">Kirish</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const shell = document.getElementById('authShell');
+
+  function goRegister(){ shell.classList.add('active'); }
+  function goLogin(){ shell.classList.remove('active'); }
+
+  function togglePass(id, btn){
+    const input = document.getElementById(id);
+    const showing = input.type === 'password';
+    input.type = showing ? 'text' : 'password';
+    btn.classList.toggle('showing', showing);
+  }
+
+  // ---- Backend bilan ulanish (Chegara xizmati) -----------------------------
+  // API manzilini sahifadan oldin o'rnating: <script>window.MUALLIM_API='https://api.muallim.uz'</script>
+  const API_BASE = window.MUALLIM_API || 'http://localhost:8000';
+  // Muvaffaqiyatli kirgandan keyin o'tiladigan sahifa (bo'sh bo'lsa - faqat xabar ko'rsatiladi)
+  const REDIRECT_URL = window.MUALLIM_REDIRECT || '';
+
+  // Access token FAQAT xotirada (localStorage/sessionStorage'ga yozilmaydi - XSS'dan o'g'irlanmasin).
+  // Refresh token httpOnly cookie'da, JS uni ko'ra olmaydi.
+  window.MuallimAuth = {
+    accessToken: null,
+    async refresh(){
+      const r = await fetch(API_BASE + '/auth/refresh', {method:'POST', credentials:'include'});
+      if(!r.ok) return false;
+      this.accessToken = (await r.json()).access_token;
+      return true;
+    },
+  };
+
+  const loginForm = document.getElementById('loginForm');
+  const loginMsg  = document.getElementById('loginMsg');
+  const loginBtn  = document.getElementById('loginBtn');
+
+  function showMsg(text, kind){
+    loginMsg.textContent = text;          // textContent: server matni HTML sifatida talqin qilinmaydi
+    loginMsg.className = 'form-msg ' + kind;
+    loginMsg.hidden = false;
+  }
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPass').value;
+    if(!email || !password){ showMsg('Email va parolni kiriting.', 'error'); return; }
+
+    loginBtn.disabled = true; loginMsg.hidden = true;
+    try{
+      const r = await fetch(API_BASE + '/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email, password}),
+      });
+      let data = {};
+      try{ data = await r.json(); }catch(_){}
+      if(r.ok){
+        window.MuallimAuth.accessToken = data.access_token;
+        document.getElementById('loginPass').value = '';
+        if(REDIRECT_URL){ location.href = REDIRECT_URL; return; }
+        showMsg('Muvaffaqiyatli kirdingiz.', 'ok');
+      }else if(r.status === 401){ showMsg('Email yoki parol xato.', 'error');
+      }else if(r.status === 422){ showMsg("Email yoki parol formati noto'g'ri.", 'error');
+      }else if(r.status === 423 || r.status === 429){
+        showMsg(typeof data.detail === 'string' ? data.detail : "Juda ko'p urinish. Birozdan keyin qayta urining.", 'error');
+      }else if(r.status === 503){ showMsg('Xizmat vaqtincha ishlamayapti. Birozdan keyin urining.', 'error');
+      }else{ showMsg("Kutilmagan xato. Qayta urinib ko'ring.", 'error'); }
+    }catch(_){
+      showMsg("Serverga ulanib bo'lmadi. Internetni tekshiring.", 'error');
+    }finally{
+      loginBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

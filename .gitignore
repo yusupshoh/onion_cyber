@@ -1,0 +1,13 @@
+venv/
+.venv/
+.idea/
+__pycache__/
+*.pyc
+.env
+secrets/*
+!secrets/.gitkeep
+data/*
+!data/.gitkeep
+*.log
+.env.vault
+.env.border
